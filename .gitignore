@@ -1,0 +1,13 @@
+VERSIONING/
+
+*.bin
+*.img
+*.o
+*.elf
+
+*.log
+
+*~
+*.swp
+*.swo
+.DS_Store
