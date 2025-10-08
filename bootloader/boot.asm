@@ -7,6 +7,37 @@
 
 ; Start Dir
 start:
+    cli
+    xor ax, ax
+    mov dx, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7C00
+    sti
+
+    mov [boot_drive], dl
+
+    ; welcome message
+    mov si, msg_welcome
+    call print_string
+
+print_string:
+    pusha
+.loop:
+    lodsb
+    or al, al
+    jz .done
+    mov ah, 0x0E
+    int 0x10
+    jmp .loop
+.done:
+    popa
+    ret
+
+halt:
+    cli
+    hlt
+    jmp halt
 
 ; Data
 boot_drive:     db 0
