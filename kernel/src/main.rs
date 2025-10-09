@@ -3,6 +3,10 @@
 
 use core::panic::PanicInfo;
 
+const VGA_BUFFER: *mut u8 = 0xB8000 as *mut u8;
+const VGA_WIDTH: usize = 80;
+const VGA_HEIGHT: usize = 25;
+
 // Color codes for VGA text mode (AI Generated)
 #[allow(dead_code)]
 #[repr(u8)]
@@ -36,7 +40,39 @@ impl Writer {
         Writer {
             column: 0,
             row: 0,
-            color: ((bg as u8) << 4) | (fg as u8)
+            color: ((bg as u8) << 4) | (fg as u8),
+        }
+    }
+
+    fn write_byte(&mut self, byte: u8) {
+        if self.column >= VGA_WIDTH {
+            self.new_line();
+        }
+
+        let offset = (self.row * VGA_WIDTH + self.column) * 2;
+        unsafe {
+            *VGA_BUFFER.add(offset) = byte;
+            *VGA_BUFFER.add(offset + 1) = self.color;
+        }
+        self.column += 1;
+    }
+
+    fn write_string(&mut self, s:&str) {
+        for byte in s.bytes() {
+            match byte {
+                0x20..=0x7e | b'\n' => self.write_byte(byte),
+                _ => self.write_byte(0xfe),
+            }
+        }
+    }
+
+    fn new_line(&mut self) {
+        self.row = self.row + 1;
+        self.column = 0;
+
+        if self.row >= VGA_HEIGHT {
+            // TODO: scroll scr. func
+            self.row = VGA_HEIGHT - 1
         }
     }
 }
@@ -45,4 +81,3 @@ impl Writer {
 fn panic(info: &PanicInfo) -> ! {
     let mut writer = Writer::new(Color::white, Color::Red);
 }
-
