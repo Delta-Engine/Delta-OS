@@ -169,6 +169,7 @@ extern "C" fn default_exception_handler() {
     }
 }
 
+#[allow(static_mut_refs)]
 fn init_idt() {
     let handler_addr = default_exception_handler as *const () as u32;
     
