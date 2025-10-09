@@ -36,7 +36,7 @@ struct Writer {
 }
 
 impl Writer {
-    fn new(fg: Color, bg: Color) -> self {
+    fn new(fg: Color, bg: Color) -> Self {
         Writer {
             column: 0,
             row: 0,
@@ -101,9 +101,65 @@ impl Writer {
             }
         }
     }
+
+    fn clear_screen(&mut self) {
+        for row in 0..VGA_HEIGHT {
+            for col in 0..VGA_WIDTH {
+                let offset = (row * VGA_WIDTH + col) * 2;
+                unsafe {
+                    *VGA_BUFFER.add(offset) = b' ';
+                    *VGA_BUFFER.add(offset + 1) = self.color;
+                }
+            }
+        }
+        self.column = 0;
+        self.row = 0;
+    }
+}
+
+#[repr(C, packed)]
+#[derive(Copy, Clone)]
+struct IdtEntry {
+    offset_low: u16,
+    selector: u16,
+    zero: u8,
+    type_attr: u8,
+    offset_high: u16,
+}
+
+impl IdtEntry {
+    const fn new() -> Self {
+        IdtEntry {
+            offset_low: 0,
+            selector: 0x08,
+            zero: 0,
+            type_attr: 0x8E,
+            offset_high: 0,
+        }
+    }
+
+    fn set_handler(&mut self, handler: u32) {
+        self.offset_low = (handler & 0xFFFF) as u16;
+        self.offset_high = ((handler >> 16) & 0xFFFF) as u16;
+        self.selector = 0x08;
+        self.type_attr = 0x8E;
+        self.zero = 0;
+    }
 }
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
-    let mut writer = Writer::new(Color::white, Color::Red);
+    let mut writer = Writer::new(Color::White, Color::Red);
+    writer.clear_screen();
+    writer.write_string("KERNEL PANIC!\n\n");
+
+    if let Some(location) = info.location() {
+        writer.write_string("Location: ");
+        writer.write_string(location.file());
+        writer.write_string("\n");
+    }
+
+    loop {
+        unsafe { core::arch::asm!("hlt") }
+    }
 }
