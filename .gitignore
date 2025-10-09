@@ -11,3 +11,5 @@ VERSIONING/
 *.swp
 *.swo
 .DS_Store
+
+target/
