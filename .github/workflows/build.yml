@@ -15,7 +15,10 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
     
-    - name: Install dependencies
+    - name: Install Rust toolchain
+      uses: actions-rust-lang/setup-rust-toolchain@v1
+    
+    - name: Install Build Dependencies
       run: |
         sudo apt-get update
         sudo apt-get install -y nasm qemu-system-x86
@@ -32,16 +35,23 @@ jobs:
         echo "Build successful! Disk image created."
         ls -lh build/
     
-    - name: Upload bootloader binary
+    - name: Upload Bootloader Binary
       uses: actions/upload-artifact@v4
       with:
         name: delta-os-bootloader
         path: build/boot.bin
         retention-days: 30
     
-    - name: Upload disk image
+    - name: Upload Kernel Binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: delta-os-kernel
+        path: build/kernel.bin
+        retention-days: 30
+    
+    - name: Upload Disk Image
       uses: actions/upload-artifact@v4
       with:
         name: delta-os-disk-image
         path: build/delta_os.img
-        retention-days: 30
+        retention-days: 60
