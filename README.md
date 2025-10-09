@@ -3,6 +3,8 @@
 A Lightweight Hobby Operating System Designed around the [Delta](https://github.com/Delta-Engine/Delta) Programming Language.
 Made by Pranav Verma.
 
+<img src="logo/images/1.png" width="400">
+
 ## Dependencies
 
 To build and run Delta OS, you need the following tools installed:
