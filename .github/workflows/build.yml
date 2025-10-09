@@ -24,7 +24,7 @@ jobs:
         sudo apt-get install -y nasm qemu-system-x86
     
     - name: Build Delta OS
-      run: make build
+      run: make rebuild
     
     - name: Check build artifacts
       run: |
