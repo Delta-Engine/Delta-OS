@@ -45,19 +45,24 @@ impl Writer {
     }
 
     fn write_byte(&mut self, byte: u8) {
-        if self.column >= VGA_WIDTH {
-            self.new_line();
-        }
+        match byte {
+            b'\n' => self.new_line(),
+            byte => {
+                if self.column >= VGA_WIDTH {
+                    self.new_line();
+                }
 
-        let offset = (self.row * VGA_WIDTH + self.column) * 2;
-        unsafe {
-            *VGA_BUFFER.add(offset) = byte;
-            *VGA_BUFFER.add(offset + 1) = self.color;
+                let offset = (self.row * VGA_WIDTH + self.column) * 2;
+                unsafe {
+                    *VGA_BUFFER.add(offset) = byte;
+                    *VGA_BUFFER.add(offset + 1) = self.color;
+                }
+                self.column += 1;
+            }
         }
-        self.column += 1;
     }
 
-    fn write_string(&mut self, s:&str) {
+    fn write_string(&mut self, s: &str) {
         for byte in s.bytes() {
             match byte {
                 0x20..=0x7e | b'\n' => self.write_byte(byte),
@@ -71,8 +76,29 @@ impl Writer {
         self.column = 0;
 
         if self.row >= VGA_HEIGHT {
-            // TODO: scroll scr. func
+            self.scroll();
             self.row = VGA_HEIGHT - 1
+        }
+    }
+
+    fn scroll(&mut self) {
+        unsafe {
+            for row in 1..VGA_HEIGHT {
+                for col in 0..VGA_WIDTH {
+                    let src = (row * VGA_WIDTH + col) * 2;
+                    let dst = ((row - 1) * VGA_WIDTH + col) * 2;
+
+                    *VGA_BUFFER.add(dst) = *VGA_BUFFER.add(src);
+                    *VGA_BUFFER.add(dst + 1) = *VGA_BUFFER.add(src + 1);
+                }
+            }
+
+            let last_row = VGA_HEIGHT - 1;
+            for col in 0..VGA_WIDTH {
+                let offset = (last_row * VGA_WIDTH + col) * 2;
+                *VGA_BUFFER.add(offset) = b' ';
+                *VGA_BUFFER.add(offset + 1) = self.color;
+            }
         }
     }
 }
