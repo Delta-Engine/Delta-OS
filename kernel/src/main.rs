@@ -147,18 +147,98 @@ impl IdtEntry {
     }
 }
 
+// idt descriptor
+#[repr(C, packed)]
+struct IdtDescriptor {
+    limit: u16,
+    base: u32,
+}
+
+// 256 entries
+static mut IDT: [IdtEntry; 256] = [IdtEntry::new(); 256];
+
+// excep handler
+extern "C" fn default_exception_handler() {
+    let mut writer = Writer::new(Color::White, Color::Red);
+    writer.clear_screen();
+    writer.write_string("EXCEPTION HANDLER CALLED!\n");
+    writer.write_string("Halting system...\n");
+    
+    loop {
+        unsafe { core::arch::asm!("hlt") }
+    }
+}
+
+fn init_idt() {
+    let handler_addr = default_exception_handler as *const () as u32;
+    
+    unsafe {
+        for entry in IDT.iter_mut() {
+            entry.set_handler(handler_addr);
+        }
+        
+        let idt_desc = IdtDescriptor {
+            limit: (core::mem::size_of::<[IdtEntry; 256]>() - 1) as u16,
+            base: IDT.as_ptr() as u32,
+        };
+        
+        core::arch::asm!(
+            "lidt [{}]",
+            in(reg) &idt_desc,
+            options(readonly, nostack, preserves_flags)
+        );
+    }
+}
+
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     let mut writer = Writer::new(Color::White, Color::Red);
     writer.clear_screen();
     writer.write_string("KERNEL PANIC!\n\n");
-
+    
     if let Some(location) = info.location() {
         writer.write_string("Location: ");
         writer.write_string(location.file());
         writer.write_string("\n");
     }
 
+    loop {
+        unsafe { core::arch::asm!("hlt") }
+    }
+}
+
+/// entry point
+#[no_mangle]
+pub extern "C" fn _start() -> ! {
+    // Initialize IDT first to catch any exceptions
+    init_idt();
+    
+    // Initialize writer
+    let mut writer = Writer::new(Color::LightGreen, Color::Black);
+    
+    // Clear screen
+    writer.clear_screen();
+    
+    // Display boot messages
+    writer.write_string("====================================\n");
+    writer.write_string("     Delta OS Kernel v0.1.0\n");
+    writer.write_string("====================================\n\n");
+    
+    writer.write_string("[OK] Kernel loaded successfully\n");
+    writer.write_string("[OK] IDT initialized\n");
+    writer.write_string("[OK] Protected mode active\n");
+    writer.write_string("[OK] VGA text mode initialized\n");
+    writer.write_string("[OK] Kernel running in 32-bit mode\n\n");
+    
+    writer.write_string("System Information:\n");
+    writer.write_string("  - Architecture: x86 (32-bit)\n");
+    writer.write_string("  - Memory Model: Flat\n");
+    writer.write_string("  - Display: VGA 80x25 Text Mode\n\n");
+    
+    writer.write_string("Kernel initialized. System halted.\n");
+    writer.write_string("\nDelta OS - Built with Rust\n");
+    
+    // Halt the CPU
     loop {
         unsafe { core::arch::asm!("hlt") }
     }
