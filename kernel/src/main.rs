@@ -77,7 +77,7 @@ impl Writer {
 
         if self.row >= VGA_HEIGHT {
             self.scroll();
-            self.row = VGA_HEIGHT - 1
+            self.row = VGA_HEIGHT - 1;
         }
     }
 

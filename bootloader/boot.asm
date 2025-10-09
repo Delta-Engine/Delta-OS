@@ -12,7 +12,7 @@ KERNEL_SEGMENT equ 0x0000
 start:
     cli
     xor ax, ax
-    mov dx, ax
+    mov ds, ax
     mov es, ax
     mov ss, ax
     mov sp, 0x7C00
@@ -73,15 +73,6 @@ load_kernel:
     int 0x13
     jc disk_error
 
-    ; For Verification
-    push es
-    mov ax, KERNEL_SEGMENT
-    mov es, ax
-    mov ax, [es:KERNEL_OFFSET]
-    pop es
-    test ax, ax
-    jz disk_error
-
     mov si, msg_ok
     call print_string
     ret
@@ -104,21 +95,10 @@ protected_mode_start:
 
     mov edi, 0xB8000
     mov ecx, 2000
-    mov ax, 0x0F20
+    mov ax, 0x0720
     rep stosw
 
-    mov edi, 0xB8000
-    mov esi, pm_msg
-.loop:
-    lodsb
-    test al, al
-    js .done
-    mov ah, 0x0F
-    stosw
-    jmp .loop
-.done:
-    mov eax, KERNEL_OFFSET
-    call eax
+    jmp CODE_SEG:KERNEL_OFFSET
 
 halt:
     cli
@@ -158,12 +138,11 @@ DATA_SEG equ gdt_data - gdt_start
 
 ; Data
 boot_drive:     db 0
-msg_welcome:    db 'Delta OS v1.0 (Dev)', 0x0D, 0x0A, 0
-msg_loading:    db 'Loading...', 0x0D, 0x0A, 0
+msg_welcome:    db 'Delta OS Bootloader', 0x0D, 0x0A, 0
+msg_loading:    db 'Loading kernel...', 0x0D, 0x0A, 0
 msg_ok:         db 'OK', 0x0D, 0x0A, 0
-msg_error:      db 'Error!', 0x0D, 0x0A, 0
-msg_protected:  db 'PM...', 0x0D, 0x0A, 0
-pm_msg:         db 'Delta OS - Protected Mode', 0
+msg_error:      db 'Disk Error!', 0x0D, 0x0A, 0
+msg_protected:  db 'Entering PM...', 0x0D, 0x0A, 0
 
 times 510-($-$$) db 0
 dw 0xAA55
