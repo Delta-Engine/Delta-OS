@@ -64,6 +64,18 @@ run-debug: $(DISK_IMAGE)
 	@echo "Starting QEMU with debugging..."
 	$(QEMU) $(QEMU_FLAGS)$(DISK_IMAGE) -d int,cpu_reset -no-reboot
 
+# Run in QEMU with VNC (hidden)
+.PHONY: run-vnc
+run-vnc: $(DISK_IMAGE)
+	@echo "Starting QEMU with VNC on :5900..."
+	$(QEMU) $(QEMU_FLAGS)$(DISK_IMAGE) -vnc :0
+
+# Run with debugging output and VNC (hidden)
+.PHONY: run-debug-vnc
+run-debug-vnc: $(DISK_IMAGE)
+	@echo "Starting QEMU with debugging and VNC on :5900..."
+	$(QEMU) $(QEMU_FLAGS)$(DISK_IMAGE) -vnc :0 -d int,cpu_reset -no-reboot
+
 # Clean build artifacts
 .PHONY: clean
 clean:
